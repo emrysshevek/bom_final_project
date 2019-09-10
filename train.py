@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 
 import numpy as np
 import argparse
+import os
 
 from data.dataset import NGramDataset
 from data.data_utils import load_data
@@ -31,13 +32,14 @@ def run_epoch(model, generator, opt, criterion):
 	return np.mean(losses)
 
 
-def train(model, generator, opt, criterion, n_epochs):
+def train(model, generator, opt, criterion, n_epochs, model_name):
 	model.train()
 	losses = []
 
 	for epoch in range(n_epochs):
 		loss = run_epoch(model, generator, opt, criterion)
 		losses.append(loss)
+		torch.save(model, os.path.join('weights', model_name + '.pt'))
 
 	return losses
 
@@ -65,18 +67,18 @@ def main(args):
 	criterion = nn.CrossEntropyLoss()
 
 	print('TRAINING')
-	losses = train(model, generator, opt, criterion, args.n_epochs)
+	losses = train(model, generator, opt, criterion, args.n_epochs, 'context_window_2')
 	print(losses)
 
 
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser()
-	argparser.add_argument('--context_window', default=5, type=int)
-	argparser.add_argument('--batch_size', default=8, type=int)
-	argparser.add_argument('--embed_dim', default=100, type=int)
-	argparser.add_argument('--n_layers', default=5, type=int)
+	argparser.add_argument('--context_window', default=2, type=int)
+	argparser.add_argument('--batch_size', default=4, type=int)
+	argparser.add_argument('--embed_dim', default=20, type=int)
+	argparser.add_argument('--n_layers', default=1, type=int)
 	argparser.add_argument('--lr', default=0.01, type=float)
-	argparser.add_argument('--n_epochs', default=10, type=int)
+	argparser.add_argument('--n_epochs', default=100, type=int)
 	args = argparser.parse_args()
 
 	main(args)
