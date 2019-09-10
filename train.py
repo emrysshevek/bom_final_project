@@ -71,10 +71,10 @@ def main(args):
 
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser()
-	argparser.add_argument('--context_window', default=5, type=int)
-	argparser.add_argument('--batch_size', default=8, type=int)
-	argparser.add_argument('--embed_dim', default=100, type=int)
-	argparser.add_argument('--n_layers', default=5, type=int)
+	argparser.add_argument('--context_window', default=1, type=int)
+	argparser.add_argument('--batch_size', default=1, type=int)
+	argparser.add_argument('--embed_dim', default=20, type=int)
+	argparser.add_argument('--n_layers', default=1, type=int)
 	argparser.add_argument('--lr', default=0.01, type=float)
 	argparser.add_argument('--n_epochs', default=10, type=int)
 	args = argparser.parse_args()
