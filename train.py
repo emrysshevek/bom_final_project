@@ -24,7 +24,7 @@ def run_epoch(model, generator, opt, criterion):
 		loss.backward()
 		opt.step()
 
-		loss = loss.item()
+		loss = loss.detach().cpu().item()
 		losses.append(loss)
 		print(loss)
 
@@ -43,12 +43,16 @@ def train(model, generator, opt, criterion, n_epochs):
 
 
 def main(args):
+	device = torch.device('cuda' if torch.cuda.is_available() and args.use_gpu else 'cpu')
+
 	data, idx_to_token, token_to_idx, vocab = load_data()
-	dataset = NGramDataset(data, context_window=args.context_window)
+	dataset = NGramDataset(data, context_window=args.context_window, device=device)
 	generator = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 	print(f'DATA: {len(dataset)} instances, {len(vocab)} vocab size, {len(generator)} batches')
-	model = Word2Vec(len(vocab), embed_dim=args.embed_dim, n_output=dataset.context_size, layers=2)
+
+	model = Word2Vec(len(vocab), embed_dim=args.embed_dim, n_output=dataset.context_size, layers=2).to(device)
 	print(model)
+
 	opt = torch.optim.SGD(params=model.parameters(), lr=args.lr)
 	criterion = nn.CrossEntropyLoss()
 
@@ -59,13 +63,13 @@ def main(args):
 
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser()
-	argparser.add_argument('--context_window', default=1)
-	argparser.add_argument('--batch_size', default=2)
-	argparser.add_argument('--embed_dim', default=10)
-	argparser.add_argument('--n_layers', default=2)
-	argparser.add_argument('--lr', default=0.01)
-	argparser.add_argument('--n_epochs', default=10)
-	argparser.add_argument('--use_gpu', default=True)
+	argparser.add_argument('--context_window', default=5, type=int)
+	argparser.add_argument('--batch_size', default=8, type=int)
+	argparser.add_argument('--embed_dim', default=100, type=int)
+	argparser.add_argument('--n_layers', default=5, type=int)
+	argparser.add_argument('--lr', default=0.01, type=float)
+	argparser.add_argument('--n_epochs', default=10, type=int)
+	argparser.add_argument('--use_gpu', default=True, type=bool)
 	args = argparser.parse_args()
 
 	main(args)
