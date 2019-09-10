@@ -43,7 +43,15 @@ def train(model, generator, opt, criterion, n_epochs):
 
 
 def main(args):
-	device = torch.device('cuda' if torch.cuda.is_available() and args.use_gpu else 'cpu')
+	use_gpu = torch.cuda.is_available()
+	if use_gpu:
+		device = torch.device('cuda')
+		print('Using GPU')
+	else:
+		device = torch.device('cpu')
+		print('Cuda is unavailable, using CPU')
+
+
 
 	data, idx_to_token, token_to_idx, vocab = load_data()
 	dataset = NGramDataset(data, context_window=args.context_window, device=device)
@@ -69,7 +77,6 @@ if __name__ == "__main__":
 	argparser.add_argument('--n_layers', default=5, type=int)
 	argparser.add_argument('--lr', default=0.01, type=float)
 	argparser.add_argument('--n_epochs', default=10, type=int)
-	argparser.add_argument('--use_gpu', default=True, type=bool)
 	args = argparser.parse_args()
 
 	main(args)
