@@ -3,3 +3,5 @@ torch
 spacy
 yaml
 tqdm
+matplotlib
+sklearn

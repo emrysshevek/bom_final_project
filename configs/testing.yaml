@@ -8,7 +8,7 @@ seed: 0  # null value uses random seed
 context_window: 10  # can be either a scalar or a tuple
 embed_dim: 256
 n_layers: 1  # this param currently has no effect
-load_dir:  results/word2vec_testing # loads a pretrained model and token set from the specified load_dir directory to continue training
+load_dir:  # loads a pretrained model and token set from the specified load_dir directory to continue training
 
 # Training
 batch_size: 64

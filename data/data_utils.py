@@ -18,9 +18,16 @@ DATA_DIR = 'data/pg17.txt'
 token_set_name = 'idx_to_token.json'
 
 
+def contains_numeric_char(token):
+	for c in token:
+		if c.isnumeric():
+			return True
+	return False
+
+
 def tokenize(text):
-	tokens = [token.text for token in nlp.tokenizer(text)]
-	# TODO: possibly remove all tokens with numbers in them?
+	tokens = [token.text for token in nlp.tokenizer(text) if not contains_numeric_char(token.text)]
+	# TODO: make everything lowercase?
 	# TODO: organize by sentence?
 	return tokens
 
@@ -73,8 +80,13 @@ def load_token_set(token_dir):
 		raise FileNotFoundError(f'Token set file ({token_set_name}) was not found in the directory ({token_dir})')
 
 	with open(path, 'r') as fp:
-		idx_to_token = json.load(fp)
-	token_to_idx = {token: idx for idx, token in idx_to_token.items()}
+		idx_to_token_raw = json.load(fp)
+
+	idx_to_token = {}
+	token_to_idx = {}
+	for idx, token in idx_to_token_raw.items():
+		idx_to_token[int(idx)] = token
+		token_to_idx[token] = int(idx)
 
 	return idx_to_token, token_to_idx
 
