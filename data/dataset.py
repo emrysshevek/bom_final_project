@@ -4,10 +4,11 @@ from torch.utils.data import Dataset
 
 class NGramDataset(Dataset):
 
-    def __init__(self, tokens, context_window=5, device=torch.device('cpu')):
+    def __init__(self, tokens, context_window=5, device=torch.device('cpu'), size=None):
         self.tokens = tokens
         self._make_context_window(context_window)
         self.device = device
+        self.size = size
 
         self.context_key = 'context'
         self.query_key = 'query'
@@ -32,7 +33,10 @@ class NGramDataset(Dataset):
                 self.query_key: token})
 
     def __len__(self):
-        return len(self.n_grams)
+        if self.size:
+            return self.size
+        else:
+            return len(self.n_grams)
 
     def __getitem__(self, idx):
         item = self.n_grams[idx]

@@ -1,0 +1,18 @@
+# General
+name: word2vec_default
+testing: False  # only loads 10 batches instead of the entire dataset
+verbose: True
+seed: 0  # null value uses random seed
+
+# Network
+context_window: 10  # can be either a scalar or a tuple
+embed_dim: 256
+n_layers: 1  # this param currently has no effect
+load_dir:  # loads a pretrained model and token set from the specified load_dir directory to continue training
+
+# Training
+batch_size: 64
+n_batches:  # when testing with small dataset, only have n_batches in dataset
+lr: 0.001
+n_epochs: 20
+starting_epoch: 0  # if continuing training, which epoch to start with. Ignored if load_dir is None/empty

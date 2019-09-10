@@ -1,16 +1,11 @@
-import torch
 from torch import nn
-from torch.nn import functional as F
-from torch.utils.data import DataLoader
 
 import numpy as np
-import argparse
-import os
 from tqdm import tqdm
 
-from data.dataset import NGramDataset
-from data.data_utils import load_data
-from models.word2vec import Word2Vec
+from utils import *
+from data.data_utils import *
+from models.model_utils import *
 
 
 def run_epoch(model, generator, opt, criterion):
@@ -32,63 +27,67 @@ def run_epoch(model, generator, opt, criterion):
     return np.mean(losses)
 
 
-def train(model, generator, opt, criterion, n_epochs, model_name):
+def train(model, generator, opt, criterion, n_epochs, result_dir, verbose=True):
     model.train()
     losses = []
-    result_dir = os.path.join('weights')
 
     for epoch in range(n_epochs):
-        print(f'Epoch {epoch}')
+        if verbose:
+            print(f'Epoch {epoch}')
+
         loss = run_epoch(model, generator, opt, criterion)
         losses.append(loss)
-        print(f'Loss: {loss}')
+        if verbose:
+            print(f'Loss: {loss}')
 
-        print('Saving model')
-        torch.save(model, os.path.join('weights', model_name + '_model.pt'))
-
-        print('Saving embedding')
-        torch.save(model.embedding, os.path.join('weights', model_name + '_embedding.pt'))
+        save_weights(model, result_dir, model_name)
+        save_weights(model.embedding, result_dir, embedding_name)
 
     return losses
 
 
-def main(args):
-    print(args)
+def main():
+    args = get_args()
 
-    use_gpu = torch.cuda.is_available()
-    if use_gpu:
-        device = torch.device('cuda')
-        print('Using GPU')
-    else:
-        device = torch.device('cpu')
-        print('Cuda is unavailable, using CPU')
+    if args['seed'] is not None:
+        torch.manual_seed(args['seed'])
+        np.random.seed(args['seed'])
 
-    data, idx_to_token, token_to_idx, vocab = load_data()
-    dataset = NGramDataset(data, context_window=args.context_window, device=device)
-    generator = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
-    print(f'DATA: {len(dataset)} instances, {len(vocab)} vocab size, {len(generator)} batches')
+    device = get_device(verbose=args['verbose'])
 
-    model = Word2Vec(len(vocab), embed_dim=args.embed_dim, n_output=dataset.context_size, layers=2).to(device)
-    print(model)
-    print(f'Model contains {sum([p.numel() for p in model.parameters()])} parameters')
+    result_dir = os.path.join('results', args['name'])
+    validate_path(result_dir, verbose=True and args['verbose'])
 
-    opt = torch.optim.SGD(params=model.parameters(), lr=args.lr)
+    save_config(args, result_dir)
+
+    data, idx_to_token, dataset, generator = load_data(
+        context_window=args['context_window'],
+        batch_size=args['batch_size'],
+        device=device,
+        testing=args['testing'],
+        n_batches=args['n_batches'],
+        data_dir=DATA_DIR,
+        verbose=args['verbose']
+    )
+    save_token_set(idx_to_token, result_dir)
+
+    model = make_word2vec_model(
+        vocab_size=len(idx_to_token),
+        embed_dim=args['embed_dim'],
+        n_output=dataset.context_size,
+        layers=args['n_layers'],
+        device=device,
+        weights=args['load_dir'],
+        verbose=args['verbose']
+    )
+
+    opt = torch.optim.SGD(params=model.parameters(), lr=args['lr'])
     criterion = nn.CrossEntropyLoss()
 
     print('TRAINING')
-    losses = train(model, generator, opt, criterion, args.n_epochs, args.name)
+    losses = train(model, generator, opt, criterion, args['n_epochs'], result_dir)
     print(losses)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--context_window', default=5, type=int)
-    parser.add_argument('--batch_size', default=64, type=int)
-    parser.add_argument('--embed_dim', default=256, type=int)
-    parser.add_argument('--n_layers', default=5, type=int)
-    parser.add_argument('--lr', default=0.01, type=float)
-    parser.add_argument('--n_epochs', default=100, type=int)
-    parser.add_argument('--name', default='sample', type=str)
-    args = parser.parse_args()
-
-    main(args)
+    main()

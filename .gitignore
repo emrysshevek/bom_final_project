@@ -1,4 +1,6 @@
 .idea
 /venv
-data/__pycache__/*
-models/__pycache/*
+data/__pycache__/
+models/__pycache/
+results/
+__pycache__/
