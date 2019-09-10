@@ -43,6 +43,8 @@ def train(model, generator, opt, criterion, n_epochs):
 
 
 def main(args):
+	print(args)
+
 	use_gpu = torch.cuda.is_available()
 	if use_gpu:
 		device = torch.device('cuda')
@@ -50,8 +52,6 @@ def main(args):
 	else:
 		device = torch.device('cpu')
 		print('Cuda is unavailable, using CPU')
-
-
 
 	data, idx_to_token, token_to_idx, vocab = load_data()
 	dataset = NGramDataset(data, context_window=args.context_window, device=device)
