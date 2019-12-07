@@ -7,6 +7,8 @@ from utils import *
 from data.data_utils import *
 from models.model_utils import *
 
+log = Logger()
+
 
 def run_epoch(model, generator, opt, criterion):
     batch_size = generator.batch_size
@@ -32,16 +34,15 @@ def train(model, generator, opt, criterion, n_epochs, result_dir, verbose=True):
     losses = []
 
     for epoch in range(n_epochs):
-        if verbose:
-            print(f'Epoch {epoch}')
+        log(f'Epoch {epoch}')
 
         loss = run_epoch(model, generator, opt, criterion)
         losses.append(loss)
-        if verbose:
-            print(f'Loss: {loss}')
+        log(f'Loss: {loss}')
 
         save_weights(model, result_dir, model_name)
         save_weights(model.embedding, result_dir, embedding_name)
+        log()
 
     return losses
 
@@ -49,14 +50,21 @@ def train(model, generator, opt, criterion, n_epochs, result_dir, verbose=True):
 def main():
     args = get_args()
 
+    result_dir = os.path.join('results', args['name'])
+    validate_path(result_dir, verbose=True and args['verbose'])
+
+    logging_path = os.path.join(result_dir, 'log.txt')
+    validate_path(logging_path, is_dir=False, verbose=args['verbose'])
+    Logger.set_file_path(logging_path)
+
     if args['seed'] is not None:
         torch.manual_seed(args['seed'])
         np.random.seed(args['seed'])
 
-    device = get_device(verbose=args['verbose'])
+    log_path = os.path.join(result_dir, 'log.txt')
+    log.init(file_path=log_path, verbosity=int(args['verbose']))
 
-    result_dir = os.path.join('results', args['name'])
-    validate_path(result_dir, verbose=True and args['verbose'])
+    device = get_device(verbose=args['verbose'])
 
     save_config(args, result_dir)
 
@@ -84,9 +92,9 @@ def main():
     opt = torch.optim.SGD(params=model.parameters(), lr=args['lr'])
     criterion = nn.CrossEntropyLoss()
 
-    print('TRAINING')
+    log('TRAINING\n')
     losses = train(model, generator, opt, criterion, args['n_epochs'], result_dir)
-    print(losses)
+    log(losses)
 
 
 if __name__ == "__main__":

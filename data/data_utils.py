@@ -5,8 +5,10 @@ import os
 import torch
 from torch.utils.data import DataLoader
 
-from utils import validate_path
+from utils import validate_path, Logger
 from data.dataset import NGramDataset
+
+log = Logger()
 
 nlp = spacy.load('en')
 
@@ -24,9 +26,12 @@ def contains_numeric_char(token):
 			return True
 	return False
 
+def is_valid_token(token):
+	return not token.is_stop and not contains_numeric_char(token.text) and not token.is_punct
+
 
 def tokenize(text):
-	tokens = [token.text for token in nlp.tokenizer(text) if not contains_numeric_char(token.text)]
+	tokens = [token.text for token in nlp.tokenizer(text.lower().replace('--', '')) if is_valid_token(token)]
 	# TODO: make everything lowercase?
 	# TODO: organize by sentence?
 	return tokens
@@ -43,9 +48,8 @@ def load_data(context_window, batch_size, device, testing=False, n_batches=None,
 
 	dataset, generator = make_data(tokens, context_window, batch_size, device, testing, n_batches)
 
-	if verbose:
-		print('Loading Data:')
-		print(f'\t{len(dataset)} instances, {len(vocab)} vocab size, {len(generator)} batches\n')
+	log('Loading Data:')
+	log(f'\t{len(dataset)} instances, {len(vocab)} vocab size, {len(generator)} batches\n')
 
 	return tokens, idx_to_token, dataset, generator
 

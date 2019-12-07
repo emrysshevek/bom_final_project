@@ -2,9 +2,12 @@ import os
 from copy import deepcopy
 
 import torch
+from torch import nn
 
 from models.word2vec import Word2Vec
-from utils import validate_path
+from utils import validate_path, Logger
+
+log = Logger()
 
 model_name = 'model'
 embedding_name = 'embedding'
@@ -14,8 +17,7 @@ def save_weights(model, weights_dir, name, verbose=True):
 	path = os.path.join(weights_dir, name+'.pt')
 	validate_path(path, is_dir=False)
 
-	if verbose:
-		print(f'saving {name} weights to {path}')
+	log(f'saving {name} weights to {path}')
 
 	try:
 		torch.save(model.state_dict(), path)
@@ -29,8 +31,7 @@ def load_weights(model, weights_dir, name, inplace=False, verbose=True):
 	if not os.path.exists(path):
 		raise FileNotFoundError(f'Weights file ({name+".pt"}) was not found in directory ({weights_dir})')
 
-	if verbose:
-		print(f'\tloading weights from {path}\n')
+	log(f'\tloading weights from {path}\n')
 
 	state_dict = torch.load(path)
 
@@ -43,8 +44,7 @@ def load_weights(model, weights_dir, name, inplace=False, verbose=True):
 
 
 def make_word2vec_model(vocab_size, embed_dim, n_output, layers, device, weights=None, verbose=True):
-	if verbose:
-		print('Creating Model:')
+	log('Creating Word2Vec Model:')
 
 	model = Word2Vec(
 		vocab_size=vocab_size,
@@ -53,16 +53,29 @@ def make_word2vec_model(vocab_size, embed_dim, n_output, layers, device, weights
 		layers=layers
 	).to(device)
 
-	if verbose:
-		print(model)
-		print(f'\tModel contains {sum([p.numel() for p in model.parameters()])} parameters')
+	log(model)
+	log(f'\tModel contains {sum([p.numel() for p in model.parameters()])} parameters')
 
 	if weights is not None:
 		model = load_weights(model, weights, model_name, inplace=False, verbose=verbose)
 	else:
-		print()
-
+		log()
 
 	return model
+
+
+def make_embedding(vocab_size, embed_dim, weights=None):
+	log('Creating Embedding')
+
+	embedding = nn.Embedding(vocab_size, embed_dim)
+
+	log(embedding)
+
+	if weights is not None:
+		embedding = load_weights(embedding, weights, embedding_name, inplace=False)
+
+	log()
+
+	return embedding
 
 

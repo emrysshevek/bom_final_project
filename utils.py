@@ -9,6 +9,42 @@ default_config = 'default'
 config_dir = 'configs'
 
 
+class Logger:
+
+	verbosity = 0
+	file_path = None
+
+	@classmethod
+	def init(cls, file_path=None, verbosity=None):
+		if verbosity is not None:
+			cls.set_verbosity(verbosity)
+		if file_path is not None:
+			cls.set_file_path(file_path)
+
+	@classmethod
+	def set_file_path(cls, file_path):
+		Logger.file_path = file_path
+		validate_path(cls.file_path, is_dir=False)
+		open(cls.file_path, 'w').close()
+
+	@classmethod
+	def set_verbosity(cls, verbosity):
+		cls.verbosity = verbosity
+
+	def __call__(self, *args, **kwargs):
+		verbosity = kwargs.pop('verbosity', 0)
+
+		if self.verbosity:
+			print(*args, **kwargs)
+		if self.file_path is not None:
+			with open(self.file_path, 'a') as fp:
+				kwargs['file'] = fp
+				print(*args, **kwargs)
+
+
+log = Logger()
+
+
 def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--config', default='default', type=str)
@@ -39,14 +75,12 @@ def validate_path(path, is_dir=True, verbose=False):
 	if not os.path.exists(path):
 		if is_dir:
 			os.makedirs(path, exist_ok=True)
-			if verbose:
-				print(f'Created directory {path}\n')
+			log(f'Created directory {path}\n')
 		else:
 			head, tail = os.path.split(path)
 			os.makedirs(head, exist_ok=True)
 			open(path, 'a').close()
-			if verbose:
-				print(f'Created file {path}\n')
+			log(f'Created file {path}\n')
 
 
 def load_config(config_name):
@@ -72,25 +106,24 @@ def get_args():
 
 	args.update(cl_args)
 
-	if args['verbose']:
-		print('Loading Arguments:')
-		for arg, value in args.items():
-			print(f'\t{arg}: {value}')
-		print()
+	Logger.init(file_path=None, verbosity=int(args['verbose']))
+
+	log('Loading Arguments:')
+	for arg, value in args.items():
+		log(f'\t{arg}: {value}')
+	log()
 
 	return args
 
 
 def get_device(verbose=True):
-	if verbose:
-		print('Checking GPU:')
+	log('Checking GPU:')
 	use_gpu = torch.cuda.is_available()
 	if use_gpu:
 		device = torch.device('cuda')
-		if verbose:
-			print('\tUsing GPU\n')
+		log('\tUsing GPU\n')
 	else:
 		device = torch.device('cpu')
-		if verbose:
-			print('\tCuda is unavailable, using CPU\n')
+		log('\tCuda is unavailable, using CPU\n')
 	return device
+
